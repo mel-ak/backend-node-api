@@ -1,5 +1,5 @@
 const express = require("express");
-const { Sequelize } = require("sequelize");
+const { Sequelize, DataTypes } = require("sequelize");
 const app = express();
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
@@ -8,17 +8,31 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
 
 app.use(express.json());
 
-const dataList = [];
+const SensorData = sequelize.define("SensorData", {
+  serial: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  temperature: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+  },
+});
 
-app.get("/data", (req, res) => {
-  res.status(200).send(dataList);
+app.get("/data", async (req, res) => {
+  const allData = await SensorData.findAll();
+  res.status(200).send(allData);
   return;
 });
 
-app.post("/data", (req, res) => {
+app.post("/data", async (req, res) => {
   const data = req.body;
-  dataList.push(data);
-  res.status(201).send("Hello");
+  const sensorData = await SensorData.create(data);
+  res.status(201).send(sensorData);
   return;
 });
 
@@ -26,6 +40,7 @@ app.listen(8080, () => {
   try {
     sequelize.authenticate();
     console.log("Connected do the database");
+    sequelize.sync({ alter: true });
   } catch (error) {
     console.log("Couldn't connect");
   }
